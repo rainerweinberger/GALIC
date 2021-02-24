@@ -10,9 +10,14 @@
 #include "allvars.h"
 #include "proto.h"
 
-
+inline void bh_get_fresh_coordinate(double* pos) {
+	pos[0] = 0.0;
+	pos[1] = 0.0;
+	pos[2] = 0.0;
+}
 
 void initialize_particles(void) {
+	mpi_printf("initialize particles \n");
 	
 	int n, i, k;
 	double phi, theta, vr;
@@ -23,8 +28,9 @@ void initialize_particles(void) {
 	int nhalo = get_part_count_this_task(All.Halo_N);
 	int ndisk = get_part_count_this_task(All.Disk_N);
 	int nbulge = get_part_count_this_task(All.Bulge_N);
+	int nbh = get_part_count_this_task(All.BH_N);
 
-	NumPart = nhalo + ndisk + nbulge;
+	NumPart = nhalo + ndisk + nbulge + nbh;
 
 	MPI_Allreduce(&NumPart, &All.MaxPart, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 	sumup_large_ints(1, &NumPart, &All.TotNumPart);
@@ -54,12 +60,22 @@ void initialize_particles(void) {
 		P[n].Mass = All.Bulge_Mass / All.Bulge_N;
 	}
 
+	printf("DEBUG: n %d, MaxPart %d \n", n, All.MaxPart);
+
+	for(i = 0; i < nbh; i++, n++) {
+		P[n].Type = 5;
+		P[n].Mass = All.BH_Mass / All.BH_N;
+	}
+	printf("DEBUG: n %d, MaxPart %d\n", n, All.MaxPart);
+
 	int *nlist = mymalloc("nlist", NTask * sizeof(int));
 	MPI_Allgather(&NumPart, 1, MPI_INT, nlist, 1, MPI_INT, MPI_COMM_WORLD);
 	int nbefore = 0;
 	for(i = 0; i < ThisTask; i++)
 		nbefore += nlist[i];
 	myfree(nlist);
+
+	printf("DEBUG: NumPart %d \n", NumPart);
 
 	for(n = 0; n < NumPart; n++)
 		P[n].ID = nbefore + n + 1;
@@ -71,8 +87,15 @@ void initialize_particles(void) {
 		else if(P[n].Type == 2)
 			disk_get_fresh_coordinate(P[n].Pos);		// disk particle 
 		else if(P[n].Type == 3)
-			bulge_get_fresh_coordinate(P[n].Pos);		// disk particle 
-
+			bulge_get_fresh_coordinate(P[n].Pos);		// bulge particle
+		else if(P[n].Type == 5)
+		{
+			bh_get_fresh_coordinate(P[n].Pos);          // bh particle
+			P[n].Vel[0] = 0.0;
+			P[n].Vel[1] = 0.0;
+			P[n].Vel[2] = 0.0;
+			continue;
+		}
 		double _r = sqrt(P[n].Pos[0] * P[n].Pos[0] + P[n].Pos[1] * P[n].Pos[1] + P[n].Pos[2] * P[n].Pos[2]);
 		
 		
@@ -124,6 +147,8 @@ void initialize_particles(void) {
 			typeOfVelocityStructure = All.TypeOfDiskVelocityStructure;
 		else if(P[n].Type == 3) // bulge 
 			typeOfVelocityStructure = All.TypeOfBulgeVelocityStructure;
+		else if(P[n].Type == 5) // bh
+			typeOfVelocityStructure = 4; // zero velocity
 		else
 			terminate("unknown type");
 
@@ -254,6 +279,9 @@ void initialize_particles(void) {
 
 			for(k = 0; k < 3; k++)
 				P[n].Vel[k] = vR * eR[k] + vphi * ePhi[k] + vz * eZ[k];
+		} else {
+		    for(k = 0; k < 3; k++)
+				P[n].Vel[k] = 0.0;
 		}
 
       vsum2 += P[n].Vel[0] * P[n].Vel[0] + P[n].Vel[1] * P[n].Vel[1] + P[n].Vel[2] * P[n].Vel[2];
@@ -263,6 +291,8 @@ void initialize_particles(void) {
 	MPI_Allreduce(count_t, tot_count_t, 6, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(count_p, tot_count_p, 6, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(count_q, tot_count_q, 6, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+	printf("DEBUG; after loop over particles \n");
 
 	int type;
 	for(type = 1; type <= 3; type++) {

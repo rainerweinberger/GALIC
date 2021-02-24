@@ -106,10 +106,12 @@ void structure_determination(void)
   MType[1] = All.Halo_Mass;
   MType[2] = All.Disk_Mass;
   MType[3] = All.Bulge_Mass;
+  MType[5] = All.BH_Mass;
 
   NType[1] = All.Halo_N;
   NType[2] = All.Disk_N;
   NType[3] = All.Bulge_N;
+  NType[5] = All.BH_N;
 
 
   if(All.Disk_Mass > 0)

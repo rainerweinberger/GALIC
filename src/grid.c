@@ -639,9 +639,10 @@ void forcedensitygrid_calculate(void)
       int nhalo = get_part_count_this_task(All.SampleForceNhalo);
       int ndisk = get_part_count_this_task(All.SampleForceNdisk);
       int nbulge = get_part_count_this_task(All.SampleForceNbulge);
+      int nbh = get_part_count_this_task(All.BH_N);
       int nsample = get_part_count_this_task(nsample_tot);
 
-      NumPart = nhalo + ndisk + nbulge + nsample;
+      NumPart = nhalo + ndisk + nbulge + nbh + nsample;
 
       MPI_Allreduce(&NumPart, &All.MaxPart, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
       sumup_large_ints(1, &NumPart, &All.TotNumPart);
@@ -677,13 +678,22 @@ void forcedensitygrid_calculate(void)
           bulge_get_fresh_coordinate(P[n].Pos); /* a bulge particle */
         }
 
+      for(i = 0; i < nbh; i++, n++)
+        {
+    	  P[n].Type = 5;
+    	  P[n].Mass = All.BH_Mass / All.BH_N;
+    	  P[n].Pos[0] = 0.0;
+    	  P[n].Pos[1] = 0.0;
+    	  P[n].Pos[2] = 0.0;
+        }
+
       for(s = 0, ns = 0; s < FG_SECTIONS; s++)
         for(k = 0; k < FG_Nbin; k++)
           for(j = 0; j < FG_Nbin; j++)
             {
               if(ns >= nsample_before && ns < (nsample_before + nsample))
                 {
-                  P[n].Type = 5;
+                  P[n].Type = 4;
                   P[n].Mass = 0;
 
                   i = (s * FG_Nbin * FG_Nbin) + k * FG_Nbin + j; /* r,z */
@@ -719,7 +729,7 @@ void forcedensitygrid_calculate(void)
       /* read out the forces and potentials */
       for(n = 0; n < NumPart; n++)
         {
-          if(P[n].Type == 5)
+          if(P[n].Type == 4)
             {
               i = P[n].ID;
               s = i / (FG_Nbin * FG_Nbin);

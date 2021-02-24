@@ -74,22 +74,32 @@ int main(int argc, char **argv) {
 	// set-up particle positions for galaxy model 
 	initialize_particles();
 
-
+	printf("DEBUG MAIN 1\n");
 
 	// calculate mass maps for energy grid 
 	calc_energy_grid_mass_maps();
 
+	printf("DEBUG MAIN 2\n");
+
 	// calculate all orbits up front at initial state 
 	calc_all_response_fields();
+
+	printf("DEBUG MAIN 3\n");
 
 	int iter = 0, rep;
 	log_message(iter);
 	output_particles(iter);
 
+	printf("DEBUG MAIN 4\n");
+
 	output_density_field(iter);
+
+	printf("DEBUG MAIN 5\n");
 
 	do {      
       
+		printf("DEBUG MAIN 6\n");
+
 		for(rep = 0; rep < All.IndepenentOptimizationsPerStep; rep++) {
 			
 			if(ThisTask == 0) printf("iter[%i]: rep = %i / %i\n", iter, rep, All.IndepenentOptimizationsPerStep);
@@ -203,6 +213,8 @@ void calc_all_response_fields(void) {
 		if (n%(NumPart/20)==0) { mpi_printf("."); fflush(stdout); }
 		
 		type = P[n].Type;
+		if(type == 5)
+			continue;
 
 #ifdef VER_1_1
 		produce_orbit_response_field_mod(P[n].Pos, P[n].Vel, P[n].ID, massOrbit, egyROrbit, egyTOrbit, egyQOrbit, egyPOrbit, P[n].Mass, P[n].Tint, &P[n].Orbits, P[n].Type);
@@ -377,6 +389,8 @@ void optimize(int n) {
 		typeOfVelocityStructure = All.TypeOfDiskVelocityStructure;
 	else if(type == 3)          // bulge 
 		typeOfVelocityStructure = All.TypeOfBulgeVelocityStructure;
+	else if(type == 5)
+		return;
 	else
 		terminate("unknown type");
 

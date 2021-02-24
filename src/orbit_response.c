@@ -164,6 +164,8 @@ double produce_orbit_response_field_mod( double *pos, double *vel, int id,
     typeOfVelocityStructure = All.TypeOfDiskVelocityStructure;
   else if(type == 3)          /* bulge */
     typeOfVelocityStructure = All.TypeOfBulgeVelocityStructure;
+  else if(type == 5)          /* bh */
+    return 0;
   else
     terminate("unknown type");
 	

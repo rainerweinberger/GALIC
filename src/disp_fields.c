@@ -73,6 +73,8 @@ void get_disp_rtp(double *pos, int type, double *disp_r, double *disp_t, double 
     typeOfVelocityStructure = All.TypeOfDiskVelocityStructure;
   else if(type == 3)          /* bulge */
     typeOfVelocityStructure = All.TypeOfBulgeVelocityStructure;
+  else if(type == 5)
+	typeOfVelocityStructure = 4;
   else
     terminate("unknown type");
 
@@ -110,6 +112,13 @@ void get_disp_rtp(double *pos, int type, double *disp_r, double *disp_t, double 
 		 
 		// if (ThisTask==0) printf("disp_q = %10g, disp_p = %10g, vstr = %10g\n", sqrt(*disp_q), sqrt(*disp_p), vstr);
      }
+  else if(typeOfVelocityStructure == 4)
+    {
+	  *disp_r = 0.0;
+	  *disp_t = 0.0;
+	  *disp_p = 0.0;
+	  *disp_q = 0.0;
+    }
   else
     terminate("unknown velocity structure");
 }
@@ -208,6 +217,8 @@ void calc_disp_components_for_particle(int n, double *vel, double *vr2, double *
 		typeOfVelocityStructure = All.TypeOfDiskVelocityStructure;
 	else if(type == 3)          /* bulge */
 		typeOfVelocityStructure = All.TypeOfBulgeVelocityStructure;
+	else if(type == 5)
+		typeOfVelocityStructure = 4;
 	else
 		terminate("unknown type");
 
@@ -368,6 +379,11 @@ void calc_disp_components_for_particle(int n, double *vel, double *vr2, double *
 		
 		
 			
+	} else if(typeOfVelocityStructure == 4){
+		*vr2 = 0.0;
+		*vt2 = 0.0;
+		*vp2 = 0.0;
+		*vq2 = 0.0;
 	}
 }
 
